@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28407.52
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiClientError", "ApiClientError\ApiClientError.csproj", "{445F17E4-D48E-4734-AB87-7792DA5BBE6D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{445F17E4-D48E-4734-AB87-7792DA5BBE6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{445F17E4-D48E-4734-AB87-7792DA5BBE6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{445F17E4-D48E-4734-AB87-7792DA5BBE6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{445F17E4-D48E-4734-AB87-7792DA5BBE6D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {84412BD1-9546-4659-9474-BC0EF6F0BD48}
+	EndGlobalSection
+EndGlobal
