@@ -6,8 +6,7 @@
 [BadReqeustResult]: https://docs.microsoft.com/zh-cn/dotnet/api/microsoft.aspnetcore.mvc.badrequestobjectresult?view=aspnetcore-2.2
 [RESTful API]: https://restfulapi.net
 [RESTful API Status Codes]: https://restfulapi.net
-[IMyProblemDetails]: ApiClientError/IMyProblemDetails.cs
-
+[IMyProblemDetails]: /ApiClientError/IMyProblemDetails.cs
 # 如何自定义 [ASP.NET Core 2.2 Web API  RESTful Web API][ASP.NET Core 2.2 Web API]调用错误时的Response？
 * [使用ASP.NET Core构建Web API][ASP.NET Core 2.2 Web API]
 * [RESTful API][RESTful API]
