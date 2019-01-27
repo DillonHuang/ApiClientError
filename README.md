@@ -75,7 +75,7 @@ public interface IMyProblemDetails
 }
 ```
 `Extensions`是用于添加扩展属性的，并不属于[RFC 7807规范][RFC7807]  
-接口`[IMyProblemDetails][IMyProblemDetails]`和 [ASP.NET CORE][ASP.NET Core 2.2 Web API]中的`[ProblemDetails][ProblemDetails]`结构是一样的  
+接口[IMyProblemDetails][IMyProblemDetails]和 [ASP.NET CORE][ASP.NET Core 2.2 Web API]中的[ProblemDetails][ProblemDetails]结构是一样的  
 创建类`MyProblemDetails`类实现接口`IMyProblemDetails`
 
 ## IClientErrorFactory & IClientErrorActionResult
@@ -97,7 +97,8 @@ public interface IStatusCodeActionResult : IActionResult
     int? StatusCode { get; }
 }
 ```
-ASP.NET Core中，HTTP 400响应最终都是`IActionResult`的实现，如果实现了`IClientErrorActionResult`接口，都会调用`IClientErrorFactory.GetClientError`处理，得到一个新的`IActionResult`,然后返回给客户端。只要在发生异常的地方**1. 数据模型验证异常**、**2. 业务验证异常**、**3. 未处理异常**返回的ActionResult都实现了`IClientErrorActionResult`，这样错误响应就会由`IClientErrorFactory`统一处理。
+ASP.NET Core中，HTTP 400响应最终都是`IActionResult`的实现，如果实现了`IClientErrorActionResult`接口，都会调用`IClientErrorFactory.GetClientError`处理，得到一个新的`IActionResult`，然后返回给客户端。  
+只要在发生异常的地方**1. 数据模型验证异常**、**2. 业务验证异常**、**3. 未处理异常**返回的ActionResult都实现了`IClientErrorActionResult`，这样错误响应就会由`IClientErrorFactory`统一处理。  
 这样我们就需要实现`IClientErrorFactory`和`IClientErrorActionResult`
 先定义个接口`IMyProblemDetailsActionResult`继承`IClientErrorActionResult`
 ```csharp
@@ -106,7 +107,7 @@ public interface IMyProblemDetailsActionResult : IClientErrorActionResult
         IMyProblemDetails ProblemDetails { get; }
 }
 ```
-再创建类`MyProblemDetailsActionResult`实现接口`IMyProblemDetails`  
+再创建类`MyProblemDetailsActionResult`实现接口`IMyProblemDetails`，只要当发生异常时都返回`MyProblemDetailsActionResult`就会统一处理。  
 `IClientErrorFactory`的实现`MyProblemDetailsClientErrorFactory`
 ```csharp
 public class MyProblemDetailsClientErrorFactory : IClientErrorFactory
@@ -149,8 +150,8 @@ public class MyProblemDetailsClientErrorFactory : IClientErrorFactory
 
 ## 自定义数据模型验证异常的响应
 [ASP.NET Core 2.2][ASP.NET Core 2.2]开始, HTTP 400响应的默认类型是[ValidationProblemDetails][ValidationProblemDetails]。该`ValidationProblemDetails`类型符合[RFC 7807规范][RFC7807]。  
-我们要将HTTP 400响应的默认类型是[ValidationProblemDetails][ValidationProblemDetails]修改为接口`[IMyProblemDetails][IMyProblemDetails]`  
-修改HTTP 400的默认响应,需要使用[InvalidModelStateResponseFactory][InvalidModelStateResponseFactory]自定义生成的响应的输出。
+我们要将HTTP 400响应的默认类型是[ValidationProblemDetails][ValidationProblemDetails]修改为接口[IMyProblemDetails][IMyProblemDetails]  
+修改HTTP 400的默认响应,需要使用`InvalidModelStateResponseFactory`自定义生成的响应的输出。
 
 ```csharp
  services.AddMvc()
@@ -161,9 +162,9 @@ public class MyProblemDetailsClientErrorFactory : IClientErrorFactory
             });
 
 ```
-`MyProblemDetailsClientErrorFactory.ProblemDetailsInvalidModelStateResponse`
+MyProblemDetailsClientErrorFactory.ProblemDetailsInvalidModelStateResponse
 
-```charp
+```csharp
 public static IMyProblemDetailsActionResult ProblemDetailsInvalidModelStateResponse(ActionContext actionContext)
         {
             IMyProblemDetails problemDetails = new MyValidationProblemDetails(actionContext.ModelState)
@@ -236,8 +237,8 @@ public class MyExceptionFilter : IExceptionFilter
 通常可能设计为
 ```json
 {
-    "errorCode":"InvalidUserName",
-    "errorMessage":"无效的用户名",
+    "errorCode":"XXXXXX",
+    "errorMessage":"YYYYYYYYYYYYYY"
 }
 ```
 增加这两个属性到`IMyProblemDetails.Extensions`中
@@ -260,5 +261,15 @@ public class MyProblemDetailsActionResult :IMyProblemDetailsActionResult
             };
             return actionResult;
         }
+}
+```
+最终响应结果如下:
+```json
+{
+   "type":"AAAAA",
+   "title":"BBBBB",
+   "errorCode":"CCCCC",
+   "errorMessage":"DDDDD",
+   "traceId":"EEEEE"
 }
 ```
