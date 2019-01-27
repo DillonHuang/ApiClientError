@@ -5,14 +5,12 @@
 [ASP.NET Core 2.2 Web API]: https://docs.microsoft.com/en-us/aspnet/core/web-api/?view=aspnetcore-2.2
 [BadReqeustResult]: https://docs.microsoft.com/zh-cn/dotnet/api/microsoft.aspnetcore.mvc.badrequestobjectresult?view=aspnetcore-2.2
 [RESTful API]: https://restfulapi.net
-[RESTful API Status Codes]: https://restfulapi.net
 [IMyProblemDetails]: /ApiClientError/IMyProblemDetails.cs
-# 如何自定义 [ASP.NET Core 2.2 Web API  RESTful Web API][ASP.NET Core 2.2 Web API]调用错误时的Response？
+# ASP.NET Core 2.2 Web API 调用发生错误时如何统一处理客户端响应？
 * [使用ASP.NET Core构建Web API][ASP.NET Core 2.2 Web API]
 * [RESTful API][RESTful API]
-* [RESTful API HTTP Status Codes][RESTful API Status Codes]
 
-构建Web API时，调用发生错误时，响应的结构一般有统一的定义的。结构可能如下：
+构建Web API时，客户端错误的结构一般有统一的定义的。结构可能如下：
 ```json
 {
     "errorCode":"XXXXX",
@@ -54,9 +52,8 @@ public class ValuesController : ControllerBase
 }
 
 ```
-## HTTP 400响应的标准[RFC 7807规范][RFC7807]
-从ASP.NET CORE 2.2开始，HTTP 400的默认响应类型符合[RFC 7807规范][RFC7807]
-
+## HTTP 400客户段错误的响应标准[RFC 7807规范][RFC7807]
+从ASP.NET CORE 2.2开始，HTTP 400的默认响应类型符合[RFC 7807规范][RFC7807]  
 按[RFC 7807规范][RFC7807]定义响应类型接口如下
 ```csharp
 public interface IMyProblemDetails
@@ -76,9 +73,14 @@ public interface IMyProblemDetails
 ```
 `Extensions`是用于添加扩展属性的，并不属于[RFC 7807规范][RFC7807]  
 接口[IMyProblemDetails][IMyProblemDetails]和 [ASP.NET CORE][ASP.NET Core 2.2 Web API]中的[ProblemDetails][ProblemDetails]结构是一样的  
-创建类`MyProblemDetails`类实现接口`IMyProblemDetails`
+创建类`MyProblemDetails`类实现接口`IMyProblemDetails`  
+`MyProblemDetails`的`Extensions`属性会增加[JsonExtensionData](https://www.newtonsoft.com/json/help/html/T_Newtonsoft_Json_JsonExtensionDataAttribute.htm)标签
+```csharp
+[JsonExtensionData]
+public IDictionary<string, object> Extensions { get; }
+```
 
-## IClientErrorFactory & IClientErrorActionResult
+## 客户错误处理工厂 IClientErrorFactory & IClientErrorActionResult
 ```csharp
 public interface IClientErrorFactory
 { 
