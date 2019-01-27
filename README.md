@@ -98,8 +98,8 @@ public interface IStatusCodeActionResult : IActionResult
 }
 ```
 ASP.NET Core中，HTTP 400响应最终都是`IActionResult`的实现，如果实现了`IClientErrorActionResult`接口，都会调用`IClientErrorFactory.GetClientError`处理，得到一个新的`IActionResult`,然后返回给客户端。只要在发生异常的地方**1. 数据模型验证异常**、**2. 业务验证异常**、**3. 未处理异常**返回的ActionResult都实现了`IClientErrorActionResult`，这样错误响应就会由`IClientErrorFactory`统一处理。
-这样我们就需要实现`IClientErrorFactory`和`IClientErrorFactory`
-先定义个接口`IMyProblemDetailsActionResult`继承`IClientErrorFactory`
+这样我们就需要实现`IClientErrorFactory`和`IClientErrorActionResult`
+先定义个接口`IMyProblemDetailsActionResult`继承`IClientErrorActionResult`
 ```csharp
 public interface IMyProblemDetailsActionResult : IClientErrorActionResult
 {
