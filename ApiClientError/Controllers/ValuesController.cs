@@ -18,10 +18,9 @@ namespace ApiClientError.Controllers
 
         // GET api/values
         [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
+        public IActionResult Get()
         {
-
-            return new string[] { "value1", "value2" };
+            return this.ProblemDetails(new MyProblemDetails() { Title = "Ok With MyProblemDetails" });
         }
 
         // GET api/values/5
@@ -30,10 +29,11 @@ namespace ApiClientError.Controllers
         {
             if (id == 0)
             {
-                return this.Problem(new MyProblemDetails()
+                var problemDetails = new MyProblemDetails()
                 {
                     Status = StatusCodes.Status400BadRequest,
-                });
+                };
+                return new MyProblemDetailsActionResult(problemDetails);
             }
             else if (id == 1)
             {
@@ -49,13 +49,14 @@ namespace ApiClientError.Controllers
         {
             if (value.Id.HasValue)
             {
-                return this.Problem(new MyProblemDetails() {
-                     Status =StatusCodes.Status400BadRequest,
-                     Title="ID不可输入",
-                     Type=$"http://xxxxx/value/post/IdForbidden",
-                     Detail="创建资源时，系统会自动生成ID，请不要输入ID。"
-
+                var problemDetails = (new MyProblemDetails()
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "ID不可输入",
+                    Type = $"http://xxxxx/value/post/IdForbidden",
+                    Detail = "创建资源时，系统会自动生成ID，请不要输入ID。"
                 });
+                return new MyProblemDetailsActionResult(problemDetails);
             }
 
             if (!long.TryParse(value.No, out var noValue))
@@ -64,7 +65,6 @@ namespace ApiClientError.Controllers
             }
             value.Id = new Random().Next(1, 1000);
             return this.Ok(value);
-
         }
 
         // PUT api/values/5

@@ -8,7 +8,7 @@ namespace ApiClientError
 {
     public static class ControllerExtensions
     {
-        public static IMyProblemDetailsActionResult Problem(this ControllerBase controllerBase, IMyProblemDetails problemDetails)
+        public static IMyProblemDetailsActionResult ProblemDetails(this ControllerBase controllerBase, IMyProblemDetails problemDetails)
         {
             return new MyProblemDetailsActionResult(problemDetails);
         }

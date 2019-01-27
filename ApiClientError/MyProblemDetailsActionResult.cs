@@ -9,12 +9,9 @@ using System.Threading.Tasks;
 
 namespace ApiClientError
 {
-    public class MyProblemDetailsActionResult :IMyProblemDetailsActionResult, IClientErrorActionResult
+    public class MyProblemDetailsActionResult :IMyProblemDetailsActionResult
     {
         private static readonly string TraceIdentifierKey = "traceId";
-        private static readonly string ErrorCodeIdentifierKey = "errorCode";
-        private static readonly string ErrorMessageIdentfierKey = "errorMessage";
-        private static readonly string IsSuccessfulIdentfierKey = "isSuccessful";
 
         public MyProblemDetailsActionResult(IMyProblemDetails problemDetails)
         {
@@ -33,29 +30,20 @@ namespace ApiClientError
 
         public static IActionResult GetActionResult(ActionContext actionContext,IMyProblemDetails problemDetails)
         {
-            problemDetails.Extensions.Add(IsSuccessfulIdentfierKey,false);
-            problemDetails.Extensions.Add(ErrorCodeIdentifierKey, problemDetails.Type);
-            problemDetails.Extensions.Add(ErrorMessageIdentfierKey, problemDetails.Title);
-            SetTraceId(actionContext, problemDetails);
+            // 添加扩展属性erroCode
+            problemDetails.Extensions.Add("errorCode", problemDetails.Type);
+            problemDetails.Extensions.Add("errorMessage", problemDetails.Title);
+            problemDetails.Extensions["traceId"] = Activity.Current?.Id ?? actionContext.HttpContext.TraceIdentifier;
             var actionResult = new ObjectResult(problemDetails)
             {
                 StatusCode = problemDetails.Status??StatusCodes.Status400BadRequest,
                 ContentTypes =
                 {
-                    "application/json",
-                    "application/xml",
+                    "application/problem+json",
+                    "application/problem+xml",
                 },
             };
             return actionResult;
-        }
-
-       
-
-
-        internal static void SetTraceId(ActionContext actionContext, IMyProblemDetails problemDetails)
-        {
-            var traceId = Activity.Current?.Id ?? actionContext.HttpContext.TraceIdentifier;
-            problemDetails.Extensions[TraceIdentifierKey] = traceId;
         }
     }
 }
