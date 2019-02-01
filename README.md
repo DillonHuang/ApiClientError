@@ -6,7 +6,10 @@
 [BadReqeustResult]: https://docs.microsoft.com/zh-cn/dotnet/api/microsoft.aspnetcore.mvc.badrequestobjectresult?view=aspnetcore-2.2
 [RESTful API]: https://restfulapi.net
 [IMyProblemDetails]: /ApiClientError/IMyProblemDetails.cs
-# ASP.NET Core 2.2 Web API 理客户端调用错误响应
+[IMyProblemDetailsActionResult]: /ApiClientError/IMyProblemDetailsActionResult.cs
+[MyProblemDetailsClientErrorFactory]: /ApiClientError/MyProblemDetailsClientErrorFactory.cs
+
+# 统一定义ASP.NET Core 2.2 Web API 理客户端调用错误响应
 设计Web API的时候，对于客户端调用错误响应，都会定义统一的结构  
 ASP.NET Core 2.2对Web API处理有不少的改变
 
@@ -170,10 +173,12 @@ public class MyProblemDetailsClientErrorFactory : IClientErrorFactory
 ```
 
 最后需要把`MyProblemDetailsClientErrorFactory`注入到Service中  
-`services.TryAddSingleton<IClientErrorFactory, ProblemDetailsClientErrorFactory>();`
+```csharp
+services.TryAddSingleton<IClientErrorFactory, ProblemDetailsClientErrorFactory>();
+```
 
 ## 自定义数据模型验证错误的响应
-[ASP.NET Core 2.2][ASP.NET Core 2.2]开始, 模型验证错误的默认类型是[ValidationProblemDetails][ValidationProblemDetails]。该`ValidationProblemDetails`类型符合[RFC 7807规范][RFC7807]。  
+从ASP.NET Core 2.2开始, 模型验证错误的默认类型是[ValidationProblemDetails][ValidationProblemDetails]。该`ValidationProblemDetails`类型符合[RFC 7807规范][RFC7807]。  
 我们要将默认类型改为接口[IMyProblemDetails][IMyProblemDetails]  
 必须要使用`InvalidModelStateResponseFactory`自定义响应。
 
