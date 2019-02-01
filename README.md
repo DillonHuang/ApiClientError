@@ -6,29 +6,37 @@
 [BadReqeustResult]: https://docs.microsoft.com/zh-cn/dotnet/api/microsoft.aspnetcore.mvc.badrequestobjectresult?view=aspnetcore-2.2
 [RESTful API]: https://restfulapi.net
 [IMyProblemDetails]: /ApiClientError/IMyProblemDetails.cs
-# ASP.NET Core 2.2 Web API 调用发生错误时如何统一处理客户端响应？
+# ASP.NET Core 2.2 Web API 理客户端调用错误响应
+设计Web API的时候，对于客户端调用错误响应，都会定义统一的结构  
+ASP.NET Core 2.2对Web API处理有不少的改变
+
 * [使用ASP.NET Core构建Web API][ASP.NET Core 2.2 Web API]
 * [RESTful API][RESTful API]
 
-构建Web API时，客户端错误的结构一般有统一的定义的。结构可能如下：
-```json
-{
-    "errorCode":"XXXXX",
-    "errorMessage":"YYYYYYYY"
-}
-```
+使用**ASP.NET Core 2.2 Web API**需要以下两点
+1. 在Controller上加上`ApiController`特性
+   ```csharp
+   [Route("api/[controller]")]
+   [ApiController]
+   public class ProductsController : ControllerBase
+   ```
+2. 设置`CompatibilityVersion`
+   ```csharp
+   services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+   ```
 
-# Web API 错误来源主要分为以下三种
-1. 数据模型验证异常
-2. 业务验证异常
+
+# Web API 客户端调用错误来源主要分为以下三种
+1. 数据模型验证错误
+2. 业务验证错误
 3. 未处理异常
 ```csharp
 public class ValueDto
 {
-    [Required()] // 1. 数据模型异常
+    [Required()] // 1. 数据模型错误
     public string No { get; set; }
 
-    [MaxLength(10) ]// 1. 数据模型异常
+    [MaxLength(10) ]// 1. 数据模型错误
     public string Name { get; set; }
 }
 
@@ -41,7 +49,7 @@ public class ValuesController : ControllerBase
     {
         if (value.No == 1)
         {
-            // 2.业务验证失败
+            // 2.业务验证错误
             return this.BadRequest(new {errorMessage="编号已经存在"});
         }
 
@@ -52,9 +60,9 @@ public class ValuesController : ControllerBase
 }
 
 ```
-## HTTP 400客户段错误的响应标准[RFC 7807规范][RFC7807]
-从ASP.NET CORE 2.2开始，HTTP 400的默认响应类型符合[RFC 7807规范][RFC7807]  
-按[RFC 7807规范][RFC7807]定义响应类型接口如下
+## 客户段错误的响应标准[RFC 7807规范][RFC7807]
+从ASP.NET CORE 2.2开始，客户端错误的默认响应类型符合[RFC 7807规范][RFC7807]  
+按[RFC 7807规范][RFC7807]定义接口[IMyProblemDetails][IMyProblemDetails]和 [ASP.NET CORE][ASP.NET Core 2.2 Web API]中的[ProblemDetails][ProblemDetails]结构是一样的 
 ```csharp
 public interface IMyProblemDetails
 {
@@ -67,17 +75,28 @@ public interface IMyProblemDetails
     int? Status { get; set; }
 
     string Instance { get; set; }
-
+    
+    // 扩展属性
+    [JsonExtensionData]
     IDictionary<string, object> Extensions { get; }    
 }
 ```
-`Extensions`是用于添加扩展属性的，并不属于[RFC 7807规范][RFC7807]  
-接口[IMyProblemDetails][IMyProblemDetails]和 [ASP.NET CORE][ASP.NET Core 2.2 Web API]中的[ProblemDetails][ProblemDetails]结构是一样的  
-创建类`MyProblemDetails`类实现接口`IMyProblemDetails`  
-`MyProblemDetails`的`Extensions`属性会增加[JsonExtensionData](https://www.newtonsoft.com/json/help/html/T_Newtonsoft_Json_JsonExtensionDataAttribute.htm)标签
+## 标准定义的扩展
+使用`IProblemDetails.Extensions`来扩展客户端错误响应的属性  
+`Extensions`属性需要增加[JsonExtensionData](https://www.newtonsoft.com/json/help/html/T_Newtonsoft_Json_JsonExtensionDataAttribute.htm)特性使其扁平化
+
 ```csharp
-[JsonExtensionData]
-public IDictionary<string, object> Extensions { get; }
+problemDetails.Extensions.Add("extension1","value1");
+problemDetails.Extensions.Add("extension2","value2");
+```
+`IMyProblemDetails.Extensions`序列化后呈**扁平**状
+```json
+{
+    "title": "XXXXX",
+    "status": 400,
+    "extension1": "value1",
+    "extension2": "value2"
+}
 ```
 
 ## 客户错误处理工厂 IClientErrorFactory & IClientErrorActionResult
@@ -99,18 +118,21 @@ public interface IStatusCodeActionResult : IActionResult
     int? StatusCode { get; }
 }
 ```
-ASP.NET Core中，HTTP 400响应最终都是`IActionResult`的实现，如果实现了`IClientErrorActionResult`接口，都会调用`IClientErrorFactory.GetClientError`处理，得到一个新的`IActionResult`，然后返回给客户端。  
-只要在发生异常的地方**1. 数据模型验证异常**、**2. 业务验证异常**、**3. 未处理异常**返回的ActionResult都实现了`IClientErrorActionResult`，这样错误响应就会由`IClientErrorFactory`统一处理。  
-这样我们就需要实现`IClientErrorFactory`和`IClientErrorActionResult`
-先定义个接口`IMyProblemDetailsActionResult`继承`IClientErrorActionResult`
+ASP.NET Core中，客户端请求通过`Controller`都会产生`IActionResult`  
+如果返回的`IActionResult`实例也实现了`IClientErrorActionResult`接口，那么将会交给`IClientErrorFactory.GetClientError`处理，得到一个新的`IActionResult`，然后返回给客户端。  
+只要在客户端调用发生错误的的地方，都返回`IClientErrorActionResult`的实现，客户端错误响应就会由`IClientErrorFactory`统一处理。  
+这样为了统一处理，就需要实现`IClientErrorFactory`和`IClientErrorActionResult`   
+为了让`IClientErrorFactory`能拿到[IMyProblemDetails][IMyProblemDetails]，需要把[IMyProblemDetails][IMyProblemDetails]放入`IClientErrorActionResult`，因此需要定义接口[IMyProblemDetailsActionResult][IMyProblemDetailsActionResult]继承`IClientErrorActionResult`
 ```csharp
 public interface IMyProblemDetailsActionResult : IClientErrorActionResult
 {
         IMyProblemDetails ProblemDetails { get; }
 }
 ```
-再创建类`MyProblemDetailsActionResult`实现接口`IMyProblemDetails`，只要当发生异常时都返回`MyProblemDetailsActionResult`就会统一处理。  
-`IClientErrorFactory`的实现`MyProblemDetailsClientErrorFactory`
+只要当发生客户端调用错误时都返回[IMyProblemDetailsActionResult][IMyProblemDetailsActionResult]，都将交给`IClientErrorFactory`统一处理。  
+
+[MyProblemDetailsClientErrorFactory][MyProblemDetailsClientErrorFactory]是`IClientErrorFactory`的实现，用`MyProblemDetailsClientErrorFactory`处理`IMyProblemDetailsActionResult`接口
+
 ```csharp
 public class MyProblemDetailsClientErrorFactory : IClientErrorFactory
 {
@@ -150,10 +172,10 @@ public class MyProblemDetailsClientErrorFactory : IClientErrorFactory
 最后需要把`MyProblemDetailsClientErrorFactory`注入到Service中  
 `services.TryAddSingleton<IClientErrorFactory, ProblemDetailsClientErrorFactory>();`
 
-## 自定义数据模型验证异常的响应
-[ASP.NET Core 2.2][ASP.NET Core 2.2]开始, HTTP 400响应的默认类型是[ValidationProblemDetails][ValidationProblemDetails]。该`ValidationProblemDetails`类型符合[RFC 7807规范][RFC7807]。  
-我们要将HTTP 400响应的默认类型是[ValidationProblemDetails][ValidationProblemDetails]修改为接口[IMyProblemDetails][IMyProblemDetails]  
-修改HTTP 400的默认响应,需要使用`InvalidModelStateResponseFactory`自定义生成的响应的输出。
+## 自定义数据模型验证错误的响应
+[ASP.NET Core 2.2][ASP.NET Core 2.2]开始, 模型验证错误的默认类型是[ValidationProblemDetails][ValidationProblemDetails]。该`ValidationProblemDetails`类型符合[RFC 7807规范][RFC7807]。  
+我们要将默认类型改为接口[IMyProblemDetails][IMyProblemDetails]  
+必须要使用`InvalidModelStateResponseFactory`自定义响应。
 
 ```csharp
  services.AddMvc()
@@ -164,8 +186,7 @@ public class MyProblemDetailsClientErrorFactory : IClientErrorFactory
             });
 
 ```
-MyProblemDetailsClientErrorFactory.ProblemDetailsInvalidModelStateResponse
-
+`MyProblemDetailsClientErrorFactory.ProblemDetailsInvalidModelStateResponse`的实现如下：
 ```csharp
 public static IMyProblemDetailsActionResult ProblemDetailsInvalidModelStateResponse(ActionContext actionContext)
         {
@@ -178,8 +199,8 @@ public static IMyProblemDetailsActionResult ProblemDetailsInvalidModelStateRespo
 ```
 `MyValidationProblemDetails`的结构和ASP.NET Core中的[ValidationProblemDetails][ValidationProblemDetails]一样
 
-## 自定义业务验证异常的响应
-检查到业务异常后，不能调用`this.BadReqeust(XXX)`,因为该方法返回的`BadRequestObjectResult`并没有实现IClientErrorActionResult
+## 自定义业务验证错误的响应
+检查到业务错误后，不能返回`this.BadReqeust(XXX)`,因为该方法返回的`BadRequestObjectResult`并没有实现IClientErrorActionResult
 ```csharp
 [HttpPost]
 public IActionResult Post([FromBody] ValueDto value)
